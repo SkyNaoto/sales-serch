@@ -1,3 +1,24 @@
+## まず api_server.ext のビルドの仕方
+ MYSY2 MINGW64 を起動し、以下のコマンドでビルドする。
+ cd sales-serch/server
+ gcc main.c mongoose.c sqlite3.c -o api_server.exe -lws2_32
+ これで、api_server.exe が出来上がるので、これを実行する。
+## api_server.ext の実行の仕方
+ MYSY2 MINGW64 のターミナルで、./api_server.exe を実行
+ これでサーバが起動する。なお、同じ場所に、sales.db を配置しておく必要がある。
+## sales.db の作成方法
+ cd sales-serch/tools
+ python create_db.py
+ 実行時に、得意先マスターNF.csv/売上リストNF_s.csv を同じディレクトリに配置しておく。これらのCSVから sales.db が生成される。
+ ※現在は、売上リストNF_s.csvは、100行のデータだけにしているので、本番では全データが入ったファイルに差し替える必要あり。
+
+## Front end の起動
+　これは従来通り、ng serve で起動する。
+
+
+
+
+
 # SalesSerch
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.0.
