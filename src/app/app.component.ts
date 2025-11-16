@@ -1,47 +1,34 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-
-
-interface SalesRecord {
-  product_name: string;
-  product_code: string;
-  customer_name: string;
-  customer_code: string;
-  amount: number;
-  quantity: number;
-  sold_at: string;
-}
+import { HttpClientModule } from '@angular/common/http';
+import { SearchService, SearchParams, SearchResult } from './services/search.service';
 
 @Component({
-    selector: 'app-root',
-    imports: [CommonModule, FormsModule],
-    templateUrl: './app.component.html',
-    styleUrls: ['./app.component.css']
+  selector: 'app-root',
+  standalone: true,
+  imports: [FormsModule, HttpClientModule],
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css'],
 })
 export class AppComponent {
-  productName = '';
-  productCode = '';
-  customerName = '';
-  customerCode = '';
-
-  results: SalesRecord[] = [];
+  params: SearchParams = {};
+  results: SearchResult[] = [];
   loading = false;
 
-  async search() {
+  constructor(private searchService: SearchService) {}
+
+  doSearch() {
     this.loading = true;
-
-    const params = new URLSearchParams({
-      productName: this.productName,
-      productCode: this.productCode,
-      customerName: this.customerName,
-      customerCode: this.customerCode
+    this.searchService.search(this.params).subscribe({
+      next: (res: SearchResult[]) => {   // ← 型追加
+        this.results = res;
+        this.loading = false;
+      },
+      error: (err: any) => {            // ← 型追加
+        console.error(err);
+        this.loading = false;
+      }
     });
-
-    // const res = await fetch(`/api/search?${params.toString()}`);
-    const res = await fetch(`http://localhost:8081/api/search?${params.toString()}`);
-    this.results = await res.json();
-    this.loading = false;
   }
+
 }

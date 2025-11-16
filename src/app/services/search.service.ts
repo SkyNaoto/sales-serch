@@ -7,6 +7,28 @@ import { Observable } from 'rxjs';
 // 例:
 // http://localhost:8081/api/search?customerName=ショーエイ&productCode=1234
 
+export interface SearchParams {
+  customerCode?: string;
+  customerName?: string;
+  customerKana?: string;
+  productName?: string;
+  productCode?: string;
+}
+
+export interface SearchResult {
+  sale_date: string;
+  customer_code: string;
+  customer_name: string;
+  customer_short: string;
+  customer_kana: string;
+  product_name: string;
+  product_code: string;
+  amount: number;
+  quantity: number;
+  unit_name: string;
+  torihiki_name: string;
+}
+
 // DI(依存性注入)コンテナにSearchServiceを登録 これにより、アプリケーション全体でサービスを利用可能にする。
 @Injectable({
   providedIn: 'root'
@@ -42,7 +64,7 @@ export class SearchService {
   // 関数全体の型（引数も戻り値も T）を動的に切り替えられる。
   // wrap<T> の T に “どの型をバインドするか” を呼び出し時に決めることで、関数全体がその型に従って動作する。
   // これがジェネリック型の基本的な考え方であり、型の再利用性と柔軟性を高める手法である。
-  search(paramsObj: any): Observable<any> {
+  search(paramsObj: SearchParams): Observable<SearchResult[]> {
 
     // HttpParamsを使用して空のクエリパラメータを構築
     // HttpParamsはサービスではないので、constructorで注入する必要はない。
@@ -59,15 +81,13 @@ export class SearchService {
     Object.keys(paramsObj).forEach(key => {
       // paramsObj[key]で各キーに対応する値を取得
       // つまり、paramsObj['customerName'] は 'ショーエイ' を返す。
-      const value = paramsObj[key];
+      const value = (paramsObj as any)[key];
       // 値が存在し、空白でない場合にのみクエリパラメータとして追加
-      if (value && value.trim() !== '') {
-        params = params.set(key, value);
-      }
+      if (value) params = params.set(key, value);
     });
     // HttpClientのgetメソッドを使用してGETリクエストを送信
     // 第一引数にAPIのURLを指定し、第二引数にオプションオブジェクトを渡す。
     // ここでは、paramsプロパティに先ほど構築したHttpParamsオブジェクトを設定している。
-    return this.http.get(this.API_URL, { params });
+    return this.http.get<SearchResult[]>(this.API_URL, { params });
   }
 }

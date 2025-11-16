@@ -1,67 +1,66 @@
-<h2>売上検索</h2>
+<h2>販売管理検索</h2>
 
-<div class="form-container">
-  <label>
-    商品名:
-    <input [(ngModel)]="productName" placeholder="部分一致" />
+<div class="search-box">
+
+  <label>得意先コード:
+    <input type="text" [(ngModel)]="params.customerCode">
   </label>
 
-  <label>
-    商品コード:
-    <input [(ngModel)]="productCode" />
+  <label>得意先名:
+    <input type="text" [(ngModel)]="params.customerName">
   </label>
 
-  <label>
-    販売先名:
-    <input [(ngModel)]="customerName" placeholder="部分一致" />
+  <label>検索カナ名:
+    <input type="text" [(ngModel)]="params.customerKana">
   </label>
 
-  <label>
-    販売先コード:
-    <input [(ngModel)]="customerCode" />
+  <label>商品名:
+    <input type="text" [(ngModel)]="params.productName">
   </label>
 
-  <button (click)="search()">検索</button>
+  <label>商品コード:
+    <input type="text" [(ngModel)]="params.productCode">
+  </label>
+
+  <button (click)="doSearch()">検索</button>
 </div>
 
-<!-- 読み込み中 -->
+<hr>
+
 @if (loading) {
-  <p>検索中…</p>
+  <p>検索中...</p>
 }
 
-<!-- 結果表示 -->
-@if (!loading && results.length > 0) {
-  <div class="table-container">
-    <table>
-      <thead>
+@if (results.length === 0 && !loading) {
+  <p>該当するデータはありません。</p>
+}
+
+@if (results.length > 0) {
+  <table class="result-table">
+    <thead>
+      <tr>
+        <th>日付</th>
+        <th>得意先名</th>
+        <th>カナ名</th>
+        <th>商品名</th>
+        <th>商品コード</th>
+        <th>数量</th>
+        <th>金額</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      @for (item of results; track item) {
         <tr>
-          <th>商品名</th>
-          <th>商品コード</th>
-          <th>販売先</th>
-          <th>販売先コード</th>
-          <th>金額</      th>
-          <th>数量</th>
-          <th>売上日</th>
+          <td>{{ item.sale_date }}</td>
+          <td>{{ item.customer_name }}</td>
+          <td>{{ item.customer_kana }}</td>
+          <td>{{ item.product_name }}</td>
+          <td>{{ item.product_code }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>{{ item.amount }}</td>
         </tr>
-      </thead>
-
-      <tbody>
-        @for (r of results; track r.product_code) {
-          <tr>
-            <td>{{ r.product_name }}</td>
-            <td>{{ r.product_code }}</td>
-            <td>{{ r.customer_name }}</td>
-            <td>{{ r.customer_code }}</td>
-            <td>{{ r.amount }}</td>
-            <td>{{ r.quantity }}</td>
-            <td>{{ r.sold_at }}</td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-}
-
-@if (!loading && results.length === 0) {
-  <p>該当データがありません。</p>
+      }
+    </tbody>
+  </table>
 }
