@@ -95,7 +95,9 @@ static void handle_api_search(struct mg_connection *c, struct mg_http_message *h
     if (customerName[0])  strcat(sql, " AND customer_name LIKE ?");
     if (customerKana[0])  strcat(sql, " AND customer_kana LIKE ?");
     if (productName[0])   strcat(sql, " AND product_name LIKE ?");
-    if (productCode[0])   strcat(sql, " AND product_code = ?");
+
+    if (productCode[0])
+        strcat(sql, " AND product_code LIKE ? ESCAPE '\\'"); // ← CHANGED
 
     strcat(sql, " ORDER BY sale_date DESC");
 
@@ -132,8 +134,12 @@ static void handle_api_search(struct mg_connection *c, struct mg_http_message *h
         snprintf(wrapped, sizeof(wrapped), "%%%s%%", likeBuf);
         sqlite3_bind_text(stmt, idx++, wrapped, -1, SQLITE_TRANSIENT);
     }
-    if (productCode[0]) {
-        sqlite3_bind_text(stmt, idx++, productCode, -1, SQLITE_TRANSIENT);
+
+    if (productCode[0]) {   // ← CHANGED
+        sanitize_like(productCode, likeBuf, sizeof(likeBuf));
+        char wrapped[600];
+        snprintf(wrapped, sizeof(wrapped), "%%%s%%", likeBuf);
+        sqlite3_bind_text(stmt, idx++, wrapped, -1, SQLITE_TRANSIENT);
     }
 
     char *json = NULL;
