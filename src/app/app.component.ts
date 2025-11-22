@@ -87,6 +87,8 @@ export class AppComponent {
 
   doSearch() {
     this.loading = true;
+    this.page = 1; // 検索時にページを1にリセット
+    
     this.params.page = this.page;
     this.params.pageSize = this.pageSize;
 
