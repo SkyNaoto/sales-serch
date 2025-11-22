@@ -1,25 +1,29 @@
 <h2>販売情報過去データ検索</h2>
 
 <div class="search-box">
-  <label>得意先コード:
-    <input type="text" [(ngModel)]="params.customerCode">
-  </label>
+  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; margin-top: 20px;">
+    <label>得意先コード:
+      <input type="text" [(ngModel)]="params.customerCode">
+    </label>
 
-  <label>得意先名:
-    <input type="text" [(ngModel)]="params.customerName">
-  </label>
+    <label>得意先名:
+      <input type="text" [(ngModel)]="params.customerName">
+    </label>
+  </div>
 
-  <label>検索カナ名:
+  <!-- <label>検索カナ名:
     <input type="text" [(ngModel)]="params.customerKana">
-  </label>
+  </label> -->
 
-  <label>商品名:
-    <input type="text" [(ngModel)]="params.productName">
-  </label>
+  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; margin-top: 20px;">
+    <label>商品コード:
+      <input type="text" [(ngModel)]="params.productCode">
+    </label>
+    <label>商品名:
+      <input type="text" [(ngModel)]="params.productName">
+    </label>
+  </div>
 
-  <label>商品コード:
-    <input type="text" [(ngModel)]="params.productCode">
-  </label>
 
   <label>検索範囲指定</label>
   <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; margin-top: 20px;">
@@ -82,7 +86,7 @@
       <tr>
         <th>日付</th>
         <th>得意先名</th>
-        <th>カナ名</th>
+        <!-- <th>カナ名</th> -->
         <th>商品名</th>
         <th>商品コード</th>
         <th>数量</th>
@@ -96,7 +100,7 @@
         <tr>
           <td>{{ item.sale_date }}</td>
           <td>{{ item.customer_name }}</td>
-          <td>{{ item.customer_kana }}</td>
+          <!-- <td>{{ item.customer_kana }}</td> -->
           <td>{{ item.product_name }}</td>
           <td>{{ item.product_code }}</td>
           <td>{{ item.quantity }}</td>
