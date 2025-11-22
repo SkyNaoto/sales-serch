@@ -74,7 +74,14 @@ with open(SALES_CSV, "r", encoding="cp932") as f:
         product_name = row.get("商品名", "").strip()
         product_code = row.get("商品コード", "").strip()
         amount = row.get("売上金額", "0").strip()
-        quantity = row.get("取引数量", "0").strip()
+        # quantity = row.get("取引数量", "0").strip()
+        raw_quantity = row.get("取引数量", "").strip()
+
+        try:
+            quantity = int(float(raw_quantity.replace(",", "").replace("　", "")))
+        except:
+            quantity = 0
+
         unit_name = row.get("単位名称", "").strip()
         torihiki_name = row.get("取引名", "").strip()
 
@@ -92,7 +99,7 @@ with open(SALES_CSV, "r", encoding="cp932") as f:
             product_name,
             product_code,
             int(amount) if amount.isdigit() else 0,
-            int(quantity) if quantity.isdigit() else 0,
+            quantity,
             unit_name,
             torihiki_name
         ))
