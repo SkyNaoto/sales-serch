@@ -13,6 +13,11 @@ import { SearchService, SearchParams, SearchResult } from './services/search.ser
 export class AppComponent {
   params: SearchParams = {};
   results: SearchResult[] = [];
+  total = 0;
+  page = 1;
+  pageSize = 100;
+  totalPages = 0;
+  pages: number[] = [];
   loading = false;
 
   constructor(private searchService: SearchService) {}
@@ -54,17 +59,54 @@ export class AppComponent {
     return `${y}-${m}-${d}`;
   }
 
+  get startIndex(): number {
+    return (this.page - 1) * this.pageSize + 1;
+  }
+
+  get endIndex(): number {
+    return Math.min(this.page * this.pageSize, this.total);
+  }
+  goPage(p: number) {
+  this.page = p;
+  this.doSearch();
+  }
+
+  prevPage() {
+    if (this.page > 1) {
+      this.page--;
+      this.doSearch();
+    }
+  }
+
+  nextPage() {
+    if (this.page < this.totalPages) {
+      this.page++;
+      this.doSearch();
+    }
+  }
+
   doSearch() {
     this.loading = true;
-    this.searchService.search(this.params).subscribe({
-      next: (res: SearchResult[]) => {   // ← 型追加
-        this.results = res;
-        this.loading = false;
-      },
-      error: (err: any) => {            // ← 型追加
-        console.error(err);
-        this.loading = false;
+    this.params.page = this.page;
+    this.params.pageSize = this.pageSize;
+
+    this.searchService.search(this.params).subscribe(res => {
+      this.results = res.data;
+      this.total = res.total;
+      this.page = res.page;
+      this.pageSize = res.pageSize;
+
+      this.totalPages = Math.ceil(this.total / this.pageSize);
+      this.pages = [];
+
+      const start = Math.max(1, this.page - 3);
+      const end = Math.min(this.totalPages, start + 6);
+
+      for (let i = start; i <= end; i++) {
+        this.pages.push(i);
       }
+
+      this.loading = false;
     });
   }
 

@@ -104,6 +104,8 @@ static void handle_api_search(struct mg_connection *c, struct mg_http_message *h
     char endDate[32] = "";
     char dbStart[16] = "";
     char dbEnd[16] = "";
+    char pageStr[16] = "1";
+    char pageSizeStr[16] = "100";
 
     // クエリパラメータを取得
     // &hm->query - HTTPリクエストのクエリ文字列（URL の ? 以降の部分）
@@ -118,6 +120,18 @@ static void handle_api_search(struct mg_connection *c, struct mg_http_message *h
     mg_http_get_var(&hm->query, "productCode",  productCode,  sizeof(productCode));
     mg_http_get_var(&hm->query, "startDate",    startDate,    sizeof(startDate));
     mg_http_get_var(&hm->query, "endDate",      endDate,      sizeof(endDate));
+    mg_http_get_var(&hm->query, "page",         pageStr,      sizeof(pageStr));
+    mg_http_get_var(&hm->query, "pageSize",     pageSizeStr,  sizeof(pageSizeStr));
+
+    // ページング処理
+    // atoi() - 文字列を整数に変換する関数
+    // 安全のために、page は 1 以上、pageSize は 1 以上 1000 以下に制限
+    int page = atoi(pageStr);
+    int pageSize = atoi(pageSizeStr);
+    if (page < 1) page = 1;
+    if (pageSize <= 0) pageSize = 100;
+    if (pageSize > 1000) pageSize = 1000;
+    int offset = (page - 1) * pageSize;
 
     const char *base_sql =
         "SELECT "
@@ -145,7 +159,77 @@ static void handle_api_search(struct mg_connection *c, struct mg_http_message *h
     }
     strcat(sql, " ORDER BY sale_date DESC");
 
-    printf("SQL => %s\n", sql);
+    // 総件数取得用SQL
+    char sql_for_count[2000];
+    strcpy(sql_for_count, sql);
+
+    printf("BASE SQL => %s\n", sql);
+
+    char count_sql[2300];
+    snprintf(count_sql, sizeof(count_sql),"SELECT COUNT(*) FROM (%s) AS subquery", sql_for_count);
+    printf("COUNT SQL => %s\n", count_sql);
+
+    // 総件数取得
+    sqlite3_stmt *count_stmt = NULL;
+    if (sqlite3_prepare_v2(g_db, count_sql, -1, &count_stmt, NULL) != SQLITE_OK) {
+        mg_http_reply(c, 500, "", "DB prepare(count) error");
+        printf("DB prepare(count) error: %s\n", sqlite3_errmsg(g_db));
+        return;
+    }
+
+    // パラメータバインド（COUNT 用）
+    {
+        char likeBuf[512];
+        int idx = 1;
+
+        if (customerCode[0]) {
+            sqlite3_bind_text(count_stmt, idx++, customerCode, -1, SQLITE_TRANSIENT);
+        }
+        if (customerName[0]) {
+            sanitize_like(customerName, likeBuf, sizeof(likeBuf));
+            char wrapped[600];
+            snprintf(wrapped, sizeof(wrapped), "%%%s%%", likeBuf);
+            sqlite3_bind_text(count_stmt, idx++, wrapped, -1, SQLITE_TRANSIENT);
+        }
+        if (customerKana[0]) {
+            sanitize_like(customerKana, likeBuf, sizeof(likeBuf));
+            char wrapped[600];
+            snprintf(wrapped, sizeof(wrapped), "%%%s%%", likeBuf);
+            sqlite3_bind_text(count_stmt, idx++, wrapped, -1, SQLITE_TRANSIENT);
+        }
+        if (productName[0]) {
+            sanitize_like(productName, likeBuf, sizeof(likeBuf));
+            char wrapped[600];
+            snprintf(wrapped, sizeof(wrapped), "%%%s%%", likeBuf);
+            sqlite3_bind_text(count_stmt, idx++, wrapped, -1, SQLITE_TRANSIENT);
+        }
+        if (productCode[0]) {
+            sanitize_like(productCode, likeBuf, sizeof(likeBuf));
+            char wrapped[600];
+            snprintf(wrapped, sizeof(wrapped), "%%%s%%", likeBuf);
+            sqlite3_bind_text(count_stmt, idx++, wrapped, -1, SQLITE_TRANSIENT);
+        }
+        if (startDate[0] && endDate[0]) {
+            date_to_db_format(startDate, dbStart, sizeof(dbStart));
+            date_to_db_format(endDate, dbEnd, sizeof(dbEnd));
+            sqlite3_bind_text(count_stmt, idx++, dbStart, -1, SQLITE_TRANSIENT);
+            sqlite3_bind_text(count_stmt, idx++, dbEnd, -1, SQLITE_TRANSIENT);
+        }
+    }
+
+    int totalCount = 0;
+    if (sqlite3_step(count_stmt) == SQLITE_ROW) {
+        totalCount = sqlite3_column_int(count_stmt, 0);
+    }
+    sqlite3_finalize(count_stmt);
+
+    // ページング付きSQLを追加
+    // LIMIT ? OFFSET ? を SQL に追加して、ページングを実現
+    char limit_clause[64];
+    snprintf(limit_clause, sizeof(limit_clause), " LIMIT %d OFFSET %d", pageSize, offset);
+    strcat(sql, limit_clause);
+
+    printf("PAGE SQL => %s\n", sql);
 
     sqlite3_stmt *stmt = NULL;
     if (sqlite3_prepare_v2(g_db, sql, -1, &stmt, NULL) != SQLITE_OK) {
@@ -201,9 +285,18 @@ static void handle_api_search(struct mg_connection *c, struct mg_http_message *h
         sqlite3_bind_text(stmt, idx++, dbEnd, -1, SQLITE_TRANSIENT);
     }
 
+    // 結果を JSON 形式で構築
     char *json = NULL;
     size_t len = 0, cap = 0;
-    append_str(&json, &len, &cap, "[");
+    // JSON 配列の開始
+    // 先にメタ情報を書き出し、その後data配列
+    append_str(&json, &len, &cap, "{");
+
+    char meta[256];
+    snprintf(meta, sizeof(meta),
+        "\"total\":%d,\"page\":%d,\"pageSize\":%d,\"data\":[",
+        totalCount, page, pageSize);
+    append_str(&json, &len, &cap, meta);
 
     int first = 1;
     while (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -241,8 +334,8 @@ static void handle_api_search(struct mg_connection *c, struct mg_http_message *h
         append_str(&json, &len, &cap, row);
         first = 0;
     }
-
-    append_str(&json, &len, &cap, "]");
+    // JSON 配列の終了
+    append_str(&json, &len, &cap, "]}");
     sqlite3_finalize(stmt);
 
     mg_http_reply(c, 200,

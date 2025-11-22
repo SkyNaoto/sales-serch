@@ -15,6 +15,8 @@ export interface SearchParams {
   productCode?: string;
   startDate?: string;
   endDate?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export interface SearchResult {
@@ -66,7 +68,12 @@ export class SearchService {
   // 関数全体の型（引数も戻り値も T）を動的に切り替えられる。
   // wrap<T> の T に “どの型をバインドするか” を呼び出し時に決めることで、関数全体がその型に従って動作する。
   // これがジェネリック型の基本的な考え方であり、型の再利用性と柔軟性を高める手法である。
-  search(paramsObj: SearchParams): Observable<SearchResult[]> {
+  search(paramsObj: SearchParams): Observable<{
+    total: number;
+    page: number;
+    pageSize: number;
+    data: SearchResult[];
+  }> {
 
     // HttpParamsを使用して空のクエリパラメータを構築
     // HttpParamsはサービスではないので、constructorで注入する必要はない。
@@ -90,6 +97,11 @@ export class SearchService {
     // HttpClientのgetメソッドを使用してGETリクエストを送信
     // 第一引数にAPIのURLを指定し、第二引数にオプションオブジェクトを渡す。
     // ここでは、paramsプロパティに先ほど構築したHttpParamsオブジェクトを設定している。
-    return this.http.get<SearchResult[]>(this.API_URL, { params });
+    return this.http.get<{
+    total: number;
+    page: number;
+    pageSize: number;
+    data: SearchResult[];
+    }>(this.API_URL, { params });
   }
 }

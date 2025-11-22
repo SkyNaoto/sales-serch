@@ -9,9 +9,9 @@
     <input type="text" [(ngModel)]="params.customerName">
   </label>
 
-  <!-- <label>検索カナ名:
+  <label>検索カナ名:
     <input type="text" [(ngModel)]="params.customerKana">
-  </label> -->
+  </label>
 
   <label>商品名:
     <input type="text" [(ngModel)]="params.productName">
@@ -51,13 +51,38 @@
   <p>該当するデータはありません。</p>
 }
 
+/* ✅ 件数表示 */
+@if (!loading && total > 0) {
+  <div style="margin: 10px 0; font-weight: bold;">
+    全 {{ total }} 件中
+    {{ startIndex }} 〜 {{ endIndex }} 件表示
+  </div>
+}
+
+/* ✅ ページナビ */
+@if (total > pageSize) {
+  <div style="margin-bottom: 15px;">
+    <button (click)="prevPage()" [disabled]="page === 1">前へ</button>
+
+    @for (p of pages; track p) {
+      <button
+        (click)="goPage(p)"
+        [style.fontWeight]="p === page ? 'bold' : 'normal'">
+        {{ p }}
+      </button>
+    }
+
+    <button (click)="nextPage()" [disabled]="page >= totalPages">次へ</button>
+  </div>
+}
+
 @if (results.length > 0) {
   <table class="result-table">
     <thead>
       <tr>
         <th>日付</th>
         <th>得意先名</th>
-        <!-- <th>カナ名</th> -->
+        <th>カナ名</th>
         <th>商品名</th>
         <th>商品コード</th>
         <th>数量</th>
@@ -71,7 +96,7 @@
         <tr>
           <td>{{ item.sale_date }}</td>
           <td>{{ item.customer_name }}</td>
-          <!-- <td>{{ item.customer_kana }}</td> -->
+          <td>{{ item.customer_kana }}</td>
           <td>{{ item.product_name }}</td>
           <td>{{ item.product_code }}</td>
           <td>{{ item.quantity }}</td>

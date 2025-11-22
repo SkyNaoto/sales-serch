@@ -2,8 +2,8 @@ import csv
 import sqlite3
 
 # ★★★ CSV のファイル名（あなたの環境用） ★★★
-SALES_CSV = "売上リストNF_s.csv"
-CUSTOMER_CSV = "得意先マスターNF.csv"
+SALES_CSV = "売上リスト20241228.csv"
+CUSTOMER_CSV = "得意先マスター20250222.csv"
 
 # ★★★ 出力する SQLite DB ★★★
 DB_NAME = "sales.db"
@@ -37,7 +37,7 @@ CREATE TABLE sales (
 # -------------------------------
 customer_map = {}  # key: 得意先コード, value: dict()
 
-with open(CUSTOMER_CSV, "r", encoding="shift_jis", errors="ignore") as f:
+with open(CUSTOMER_CSV, "r", encoding="cp932") as f:
     reader = csv.DictReader(f)
     for row in reader:
         code = row.get("得意先コード", "").strip()
@@ -56,7 +56,7 @@ print(f"得意先マスター読み込み完了（{len(customer_map)} 件）")
 # -------------------------------
 # 売上リストの読み込み（Shift-JIS）
 # -------------------------------
-with open(SALES_CSV, "r", encoding="shift_jis", errors="ignore") as f:
+with open(SALES_CSV, "r", encoding="cp932") as f:
     reader = csv.DictReader(f)
 
     count = 0
