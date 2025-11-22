@@ -9,9 +9,9 @@
     <input type="text" [(ngModel)]="params.customerName">
   </label>
 
-  <label>検索カナ名:
+  <!-- <label>検索カナ名:
     <input type="text" [(ngModel)]="params.customerKana">
-  </label>
+  </label> -->
 
   <label>商品名:
     <input type="text" [(ngModel)]="params.productName">
@@ -57,7 +57,7 @@
       <tr>
         <th>日付</th>
         <th>得意先名</th>
-        <th>カナ名</th>
+        <!-- <th>カナ名</th> -->
         <th>商品名</th>
         <th>商品コード</th>
         <th>数量</th>
@@ -71,7 +71,7 @@
         <tr>
           <td>{{ item.sale_date }}</td>
           <td>{{ item.customer_name }}</td>
-          <td>{{ item.customer_kana }}</td>
+          <!-- <td>{{ item.customer_kana }}</td> -->
           <td>{{ item.product_name }}</td>
           <td>{{ item.product_code }}</td>
           <td>{{ item.quantity }}</td>
