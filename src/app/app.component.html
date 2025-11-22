@@ -1,17 +1,6 @@
 <h2>販売情報過去データ検索</h2>
 
 <div class="search-box">
-  <label>検索範囲指定</label>
-  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-    <label>開始日:
-      <input type="date" [(ngModel)]="params.startDate">
-    </label>
-    <span>～</span>
-    <label>終了日:
-      <input type="date" [(ngModel)]="params.endDate">
-    </label>
-  </div>
-
   <label>得意先コード:
     <input type="text" [(ngModel)]="params.customerCode">
   </label>
@@ -32,6 +21,23 @@
     <input type="text" [(ngModel)]="params.productCode">
   </label>
 
+  <label>検索範囲指定</label>
+  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; margin-top: 20px;">
+    <label>開始日:
+      <input type="date" [(ngModel)]="params.startDate">
+    </label>
+    <span>～</span>
+    <label>終了日:
+      <input type="date" [(ngModel)]="params.endDate">
+    </label>
+  </div>
+  
+  <div style="margin-bottom: 10px; gap: 10px; display: flex; margin-bottom: 30px;">
+    <button (click)="setThisMonth()">今月</button>
+    <button (click)="setLastMonth()">先月</button>
+    <button (click)="setLast30Days()">過去30日</button>
+  </div>
+  
   <button (click)="doSearch()">検索</button>
 </div>
 
