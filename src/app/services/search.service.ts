@@ -13,6 +13,8 @@ export interface SearchParams {
   customerKana?: string;
   productName?: string;
   productCode?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface SearchResult {

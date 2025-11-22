@@ -64,6 +64,31 @@ static void append_str(char **buf, size_t *len, size_t *cap, const char *src) {
 }
 
 /****************************************************
+  Angular形式の日付をDB形式に変換
+    strlen(src) == 10 - 入力が10文字（YYYY-MM-DD 形式）かチェック
+
+    snprintf(dst, size, "%.4s%.2s%.2s", src, src +5, src +8) - 文字列を分解して結合
+    %.4s → src の先頭4文字（年：YYYY）
+    %.2s → src +5 の2文字（月：MM）
+    %.2s → src +8 の2文字（日：DD）
+    dst[0] = '\0' - 形式が正しくない場合は空文字列にする
+    ＜参考＞ char *src は、文字列の先頭アドレスを指している
+    メモリアドレス: 1000  1001  1002  1003  1004  1005  1006  1007  1008  1009  1010
+    文字:           '2'   '0'   '2'   '4'   '-'   '0'   '1'   '-'   '2'   '3'   '\0'
+    位置:            0     1     2     3     4     5     6     7     8     9     10
+                    ↑                             ↑
+                    src                         src+5
+****************************************************/
+static void date_to_db_format(const char *src, char *dst, size_t size) {
+    // "YYYY-MM-DD" 形式を "YYYYMMDD" 形式に変換
+    if (strlen(src) == 10) {
+        snprintf(dst, size, "%.4s%.2s%.2s", src, src +5, src +8);
+    } else {
+        dst[0] = '\0';
+    }
+}
+
+/****************************************************
   /api/search ハンドラ
 ****************************************************/
 static void handle_api_search(struct mg_connection *c, struct mg_http_message *hm) {
@@ -75,12 +100,24 @@ static void handle_api_search(struct mg_connection *c, struct mg_http_message *h
     char customerKana[256] = "";
     char productName[256] = "";
     char productCode[128] = "";
+    char startDate[32] = "";
+    char endDate[32] = "";
+    char dbStart[16] = "";
+    char dbEnd[16] = "";
 
+    // クエリパラメータを取得
+    // &hm->query - HTTPリクエストのクエリ文字列（URL の ? 以降の部分）
+    // 例
+    // "customerCode" - 取得したいパラメータの名前
+    // customerCode - 取得した値を格納するバッファ
+    // sizeof(customerCode) - バッファのサイズ
     mg_http_get_var(&hm->query, "customerCode", customerCode, sizeof(customerCode));
     mg_http_get_var(&hm->query, "customerName", customerName, sizeof(customerName));
     mg_http_get_var(&hm->query, "customerKana", customerKana, sizeof(customerKana));
     mg_http_get_var(&hm->query, "productName",  productName,  sizeof(productName));
     mg_http_get_var(&hm->query, "productCode",  productCode,  sizeof(productCode));
+    mg_http_get_var(&hm->query, "startDate",    startDate,    sizeof(startDate));
+    mg_http_get_var(&hm->query, "endDate",      endDate,      sizeof(endDate));
 
     const char *base_sql =
         "SELECT "
@@ -91,14 +128,21 @@ static void handle_api_search(struct mg_connection *c, struct mg_http_message *h
     char sql[2000];
     strcpy(sql, base_sql);
 
+    // 動的に SQL を構築
+    // strcat とは、文字列を連結する関数
+    // 例えば、customerCode が指定されていれば、
+    // " AND customer_code = ?" が SQL に追加される =? はプレースホルダ
+    // 後で sqlite3_bind_text() で値をバインドする
+    // なお、customer_code は完全一致検索、他は部分一致検索（LIKE）としている
     if (customerCode[0])  strcat(sql, " AND customer_code = ?");
     if (customerName[0])  strcat(sql, " AND customer_name LIKE ?");
     if (customerKana[0])  strcat(sql, " AND customer_kana LIKE ?");
     if (productName[0])   strcat(sql, " AND product_name LIKE ?");
-
     if (productCode[0])
         strcat(sql, " AND product_code LIKE ? ESCAPE '\\'"); // ← CHANGED
-
+    if (startDate[0] && endDate[0]) {
+    strcat(sql, " AND sale_date BETWEEN ? AND ?");
+    }
     strcat(sql, " ORDER BY sale_date DESC");
 
     printf("SQL => %s\n", sql);
@@ -113,6 +157,12 @@ static void handle_api_search(struct mg_connection *c, struct mg_http_message *h
     char likeBuf[512];
     int idx = 1;
 
+    // プレースホルダに値をバインド
+    // sqlite3_bind_text() は、指定したプレースホルダに文字列をバインドする関数
+    // idx はプレースホルダの位置（1から始まる）
+    // -1 は文字列の長さを自動的に計算することを意味する
+    // SQLインジェクション対策として、直接 SQL に値を埋め込むのではなく、
+    // プレースホルダを使って値をバインドしている
     if (customerCode[0]) {
         sqlite3_bind_text(stmt, idx++, customerCode, -1, SQLITE_TRANSIENT);
     }
@@ -140,6 +190,15 @@ static void handle_api_search(struct mg_connection *c, struct mg_http_message *h
         char wrapped[600];
         snprintf(wrapped, sizeof(wrapped), "%%%s%%", likeBuf);
         sqlite3_bind_text(stmt, idx++, wrapped, -1, SQLITE_TRANSIENT);
+    }
+
+    if (startDate[0] && endDate[0]) {
+        // Angular形式の日付を DB 形式に変換
+        date_to_db_format(startDate, dbStart, sizeof(dbStart));
+        date_to_db_format(endDate, dbEnd, sizeof(dbEnd));
+
+        sqlite3_bind_text(stmt, idx++, dbStart, -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(stmt, idx++, dbEnd, -1, SQLITE_TRANSIENT);
     }
 
     char *json = NULL;
@@ -194,6 +253,7 @@ static void handle_api_search(struct mg_connection *c, struct mg_http_message *h
 
     free(json);
 }
+
 
 /****************************************************
   Mongoose イベントハンドラ

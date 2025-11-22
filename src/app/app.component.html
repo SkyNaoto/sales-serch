@@ -1,6 +1,16 @@
-<h2>販売管理検索</h2>
+<h2>販売情報過去データ検索</h2>
 
 <div class="search-box">
+  <label>検索範囲指定</label>
+  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+    <label>開始日:
+      <input type="date" [(ngModel)]="params.startDate">
+    </label>
+    <span>～</span>
+    <label>終了日:
+      <input type="date" [(ngModel)]="params.endDate">
+    </label>
+  </div>
 
   <label>得意先コード:
     <input type="text" [(ngModel)]="params.customerCode">
