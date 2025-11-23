@@ -47,3 +47,6 @@ Thumbs.db
 # Data db files
 /tools/*.db
 /server/*.db
+
+# Release files
+/Release

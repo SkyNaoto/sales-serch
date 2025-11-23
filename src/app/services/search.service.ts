@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 // SearchServiceは、検索APIと通信するためのサービスです。
 // 検索条件をパラメータとして受け取り、APIエンドポイントにGETリクエストを送信します。
@@ -39,7 +40,8 @@ export interface SearchResult {
 })
 export class SearchService {
 
-  private API_URL = 'http://localhost:8081/api/search';
+  // private API_URL = 'http://localhost:8081/api/search';
+  private API_URL = `${environment.apiBaseUrl}/api/search`;
 
   // コンストラクタでHttpClientを注入 
   // こうすることで AngularのDIコンテナが、このクラスはHttpClientを必要としていることを認識し、HttpClientを注入してくれる。

@@ -367,7 +367,8 @@ static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
             printf("MATCHED /api/search\n");
             handle_api_search(c, hm);
         } else {
-            mg_http_reply(c, 404, "", "Not found");
+            struct mg_http_serve_opts opts = { .root_dir = "./browser" };
+            mg_http_serve_dir(c, hm, &opts);
         }
     }
 }
