@@ -70,25 +70,34 @@ export class AppComponent {
   this.page = p;
   this.doSearch();
   }
-
   prevPage() {
     if (this.page > 1) {
       this.page--;
-      this.doSearch();
+      this.doSearch(false);
     }
   }
 
   nextPage() {
     if (this.page < this.totalPages) {
       this.page++;
-      this.doSearch();
+      this.doSearch(false);
     }
   }
 
-  doSearch() {
+  // 検索ボタン用（ページリセット）
+  startSearch() {
+    this.page = 1;
+    this.doSearch(true);
+  }
+
+  // 本体検索関数
+  doSearch(resetPage = false) {
     this.loading = true;
-    this.page = 1; // 検索時にページを1にリセット
-    
+
+    if (resetPage) {
+      this.page = 1;
+    }
+
     this.params.page = this.page;
     this.params.pageSize = this.pageSize;
 
@@ -111,5 +120,4 @@ export class AppComponent {
       this.loading = false;
     });
   }
-
 }
